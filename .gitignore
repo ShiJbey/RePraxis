@@ -1,0 +1,8 @@
+# Binary directories
+
+src/RePraxis/bin
+src/RePraxis/obj
+tests/RePraxis.Tests/bin
+tests/RePraxis.Tests/obj
+dist/
+**/.DS_Store
