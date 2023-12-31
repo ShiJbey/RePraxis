@@ -14,6 +14,8 @@ Re:Praxis is an in-memory database solution for creating simple databases for ga
 Creating a new database is the first thing you need to do. A `RePraxisDatabase` instance is responsible for managing all the data and providing data to query. Y
 
 ```csharp
+using RePraxis;
+
 // Construct a new database
 RePraxisDatabase db = new RePraxisDatabase();
 ```
