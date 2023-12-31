@@ -4,7 +4,7 @@ Re:Praxis is an in-memory database solution for creating simple databases for ga
 
 ## Installation
 
-1. Find and Download the latest release of Re:Praxis under the [Releases](https://github.com/ShiJbey/RePraxis/releases) page. Select the `RePraxis_X.Y.Z.tgz` entry under "Assets" (where `X.Y.Z`` corresponds to the Re:Praxis version).
+1. Find and Download the latest release of Re:Praxis under the [Releases](https://github.com/ShiJbey/RePraxis/releases) page. Select the `RePraxis_X.Y.Z.zip` entry under "Assets" (where `X.Y.Z`` corresponds to the Re:Praxis version).
 2. Unzip the download to produce a `RePraxis` directory. This directory should contain the `RePraxis.dll`, `RePraxis.pdb`, and `RePraxis.deps.json` files generated from building the source code.
 3. Copy this directory into your project.
    - If you're using Unity, place this directory within a directory named `Plugins`, within your `Assets` folder.
