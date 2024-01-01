@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+
 namespace RePraxis
 {
 	public abstract class Node<T> : INode where T : notnull

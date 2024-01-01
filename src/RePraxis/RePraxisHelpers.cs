@@ -1,5 +1,7 @@
 using System.Text;
 
+using System.Collections.Generic;
+
 namespace RePraxis
 {
 	public static class RePraxisHelpers
