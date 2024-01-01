@@ -125,7 +125,7 @@ if ( results.Success )
 
 ## Building Re:Praxis from source
 
-Building Re:Praxis from source requires that you have .Net net installed. Run the following commands and new `RePraxis.dll` and `RePraxis.pdb` files will be generated within the `src/RePraxis/bin/Debug/net7.0` directory.
+Building Re:Praxis from source requires that you have .Net net installed. Run the following commands and new `RePraxis.dll` and `RePraxis.pdb` files will be generated under the `dist` directory.
 
 ```bash
 # Step 1: Clone the repository
