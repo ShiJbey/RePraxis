@@ -11,7 +11,7 @@ Re:Praxis is an in-memory database solution for creating simple databases for ga
 
 ## Creating a new database
 
-Creating a new database is the first thing you need to do. A `RePraxisDatabase` instance is responsible for managing all the data and providing data to query. Y
+Creating a new database is the first thing you need to do. A `RePraxisDatabase` instance is responsible for managing all the data and providing data to query.
 
 ```csharp
 using RePraxis;
@@ -70,6 +70,8 @@ Finally, th most powerful part of this database solution is the ability to query
 Note that variables are specified using a question mark (`?`). The question mark **does not** replace the `.` or `!`.
 
 ```csharp
+using RePraxis;
+
 RePraxisDatabase db = new RePraxisDatabase();
 
 // Add new information into the database
@@ -92,18 +94,23 @@ QueryResult result =
         .Where( "neq ?speaker player" )
         .Run( db );
 
-if (result.Success) {
+if ( results.Success )
+{
     // Print the results
-    foreach (var b in result.bindings) {
+    foreach ( var bindingDict in results.Bindings )
+    {
         Console.WriteLine(
             "{"
             + string.Join(
-                    ",", dictionary.Select(b => b.Key + "=" + b.Value).ToArray()
-                )
+               ", ", bindingDict.Select( b => b.Key + "=" + b.Value ).ToArray()
+            )
             + "}"
         );
     }
 }
+
+// Output:
+//  {?speaker=astrid, ?other=jordan, ?r0=30, ?r1=-20}
 ```
 
 ### Query Operators
@@ -115,7 +122,6 @@ if (result.Success) {
 - `lt a b`: Checks if `a` is less than to `b`, where `a` and `b` must be variables, single symbols, or integers/floats.
 - `gte a b`: Checks if `a` is greater than or equal to `b`, where `a` and `b` must be variables, single symbols, or integers/floats.
 - `lte a b`: Checks if `a` is less than or equal to `b`, where `a` and `b` must be variables, single symbols, or integers/floats.
-
 
 ## Building Re:Praxis from source
 
@@ -136,3 +142,4 @@ dotnet build
 
 - <https://versu.com/about/how-versu-works/>
 - <https://github.com/JamesDameris/Wyclef>
+- <https://github.com/mkremins/praxish>
