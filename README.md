@@ -120,6 +120,8 @@ result = new DBQuery()
     .Run( db, new Dictionary<string, string>() { { "?other", "lee" } } );
 ```
 
+More examples are available under the `tests` directory.
+
 ### Query Operators
 
 - `not <sentence>`: Checks if a sentence is not present in the database

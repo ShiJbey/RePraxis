@@ -9,6 +9,7 @@ The format is based on <https://common-changelog.org/>, and this project adheres
 ### Added
 
 - Add option to supply initial bindings to query
+- Add bundler script to help with making releases
 
 ### Fixed
 
