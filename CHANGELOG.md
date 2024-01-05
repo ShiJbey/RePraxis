@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on <https://common-changelog.org/>, and this project adheres mostly to Semantic Versioning. However, all releases before 1.0.0 have breaking changes between minor-version updates.
 
+## [1.1.0] - 2024-01-05
+
+### Added
+
+- Add option to supply initial bindings to query
+
+### Fixed
+
+- Fix typo in unit test
+
 ## [1.0.0] - 2023-12-31
 
 ### Added
@@ -14,4 +24,5 @@ The format is based on <https://common-changelog.org/>, and this project adheres
 
 _Initial release._
 
-[1.0.0]: https://github.com/ShiJbey/RePraxis
+[1.0.0]: https://github.com/ShiJbey/RePraxis/releases/tag/v1.0.0
+[1.1.0]: https://github.com/ShiJbey/RePraxis/releases/tag/v1.1.0

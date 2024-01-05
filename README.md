@@ -1,13 +1,13 @@
 # Re:Praxis - In-memory database and query language for C\#
 
-Re:Praxis is an in-memory database solution for creating simple databases for games and applications. It is a reconstruction of Praxis, the exclusion logic-based language used by the [Versu social simulation engine](https://versu.com/). Users store information using strings called *sentences*, and these are parsed by the system to create an internal database tree. Users can then query for patterns in the data using the same syntax used to store information.
+Re:Praxis is an in-memory database solution for creating simple databases for games and applications. It is a reconstruction of Praxis, the exclusion logic-based language used by the [Versu social simulation engine](https://versu.com/). Users store information using strings called *sentences*, and the system parses these to create an internal database tree. Users can then query for patterns in the data using the same syntax used to store information.
 
 ## Installation
 
-1. Find and Download the latest release of Re:Praxis under the [Releases](https://github.com/ShiJbey/RePraxis/releases) page. Select the `RePraxis_X.Y.Z.zip` entry under "Assets" (where `X.Y.Z`` corresponds to the Re:Praxis version).
+1. Find and Download the latest release of Re:Praxis under the [Releases](https://github.com/ShiJbey/RePraxis/releases) page. Select the `RePraxis_X.Y.Z.zip` entry under "Assets" (where `X.Y.Z` corresponds to the Re:Praxis version).
 2. Unzip the download to produce a `RePraxis` directory. This directory should contain the `RePraxis.dll`, `RePraxis.pdb`, and `RePraxis.deps.json` files generated from building the source code.
 3. Copy this directory into your project.
-   - If you're using Unity, place this directory within a directory named `Plugins`, within your `Assets` folder.
+   - If you're using Unity, place this directory within a directory named `Plugins` within your `Assets` folder.
 
 ## Creating a new database
 
@@ -24,7 +24,7 @@ RePraxisDatabase db = new RePraxisDatabase();
 
 Adding information to the database is easy. There are no SQL-like tables or property-driven documents. Re:Praxis stores information using strings of text called sentences. Sentences are broken into nodes using the dot (`.`) and exclusion (`!`) operators (See the example code below).
 
-You can think of the internal structure of the database like a tree. Nodes followed by the dot operator can have more than one child, and those followed by the exclusion operator can only have a single child (See the example below).
+You can think of the internal structure of the database as a tree. Nodes followed by the dot operator can have more than one child, and those followed by the exclusion operator can only have a single child (See the example below).
 
 ```csharp
 // The sentence below enters the fact that we have a symbol "ashley" that has
@@ -38,11 +38,11 @@ db.Insert( "ashley.age!32" );
 db.Insert( "ashley.likes.mike" );
 ```
 
-So, with this setup we can express and store various things like character stats and relationships within your game. For more information about the syntax please see [this presentation](https://versublog.files.wordpress.com/2014/05/praxis.pdf) by Richard Evans on the original Praxis language.
+This setup allows us to express and store various things like character stats and relationships. For more information about the syntax, please see [this presentation](https://versublog.files.wordpress.com/2014/05/praxis.pdf) by Richard Evans on the original Praxis language.
 
 ## Deleting information
 
-Conversely, we can remove information from the database using the same syntax. The code below removes this entry from the database along with any other data entries prefixed with `"ashley.likes.mike"`.
+Conversely, we can remove information from the database using the same syntax. The code below removes this entry from the database and any other data entries prefixed with `"ashley.likes.mike"`.
 
 ```csharp
 db.Delete( "ashley.likes.mike" );
@@ -50,7 +50,7 @@ db.Delete( "ashley.likes.mike" );
 
 ## Asserting information
 
-Users can check if the database has a piece of data using the `RePraxisDatabase.Assert` method. `Assert` will return false if the data is not in the database, if the values differ, or if the cardinality (`.` or `!`) don't match.
+Users can check if the database has a piece of data using the `RePraxisDatabase.Assert` method. `Assert` will return false if the data is not in the database, the values differ, or the cardinalities (`.` or `!`) don't match.
 
 ```csharp
 db.Assert( "ashley.dislikes.mike" );
@@ -65,7 +65,7 @@ db.Assert( "ashley.likes" );
 
 ## Querying the database
 
-Finally, th most powerful part of this database solution is the ability to query for patterns using variables. Queries have an extended syntax that allow for variables, negations, and relational operations. The example below creates a database, fills it with information about relationships between some characters and the player of an adventure game. Then we create a new query that looks for valid bindings for the variables: `?speaker`, `?other`, `?r0`, and `?r1`.
+Finally, the most powerful part of this database solution is the ability to query for patterns using variables. Queries have an extended syntax allowing variables, negations, and relational operations. The example below creates a database and fills it with information about relationships between some characters and a player. Then we create a new query that looks for valid bindings for the variables: `?speaker`, `?other`, `?r0`, and `?r1`.
 
 Note that variables are specified using a question mark (`?`). The question mark **does not** replace the `.` or `!`.
 
@@ -125,13 +125,13 @@ if ( results.Success )
 
 ## Building Re:Praxis from source
 
-Building Re:Praxis from source requires that you have .Net net installed. Run the following commands and new `RePraxis.dll` and `RePraxis.pdb` files will be generated within the `src/RePraxis/bin/Debug/net7.0` directory.
+Building Re:Praxis from source requires that you have .Net net installed. Run the following commands, and new `RePraxis.dll` and `RePraxis.pdb` files will be generated within the `src/RePraxis/bin/Debug/net7.0` directory.
 
 ```bash
 # Step 1: Clone the repository
 git clone https://github.com/ShiJBey/RePraxis.git
 
-# Step 2: Change to rhe project repository
+# Step 2: Change to the project repository
 cd RePraxis
 
 # Step 3: Build using dotnet CLI

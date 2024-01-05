@@ -51,6 +51,15 @@ public class Tests
 		Assert.That( r0.Success, Is.EqualTo( true ) );
 		Assert.That( r0.Bindings.Length, Is.EqualTo( 2 ) );
 
+		// Relational expression with a single variable
+		var r0_b = new DBQuery()
+			.Where( "astrid.relationships.?other.reputation!?r" )
+			.Where( "gte ?r 10" )
+			.Run( db, new Dictionary<string, string>() { { "?other", "lee" } } );
+
+		Assert.That( r0_b.Success, Is.EqualTo( true ) );
+		Assert.That( r0_b.Bindings.Length, Is.EqualTo( 1 ) );
+
 		// Relational expression with multiple variables
 		var r1 = new DBQuery()
 			.Where( "?A.relationships.?other.reputation!?r" )
@@ -66,7 +75,7 @@ public class Tests
 			.Run( db );
 
 		Assert.That( r2.Success, Is.EqualTo( true ) );
-		Assert.That( r2.Bindings.Length, Is.EqualTo( 0 ) );
+		Assert.That( r2.Bindings.Length, Is.EqualTo( 1 ) );
 
 		// Failing assertion without variables
 		var r3 = new DBQuery()

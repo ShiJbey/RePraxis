@@ -62,9 +62,9 @@ namespace RePraxis
 		/// any variables within the query, it returns all valid bindings for those
 		/// variables as an array of dictionaries.
 		/// </returns>
-		public QueryResult Run(RePraxisDatabase db)
+		public QueryResult Run(RePraxisDatabase db, Dictionary<string, string> bindings)
 		{
-			var result = new QueryResult( true, new Dictionary<string, string>[0] );
+			var result = new QueryResult( true, new Dictionary<string, string>[] { bindings } );
 
 			foreach ( string expressionStr in _expressions )
 			{
@@ -142,6 +142,11 @@ namespace RePraxis
 			}
 
 			return result;
+		}
+
+		public QueryResult Run(RePraxisDatabase db)
+		{
+			return Run( db, new Dictionary<string, string>() );
 		}
 
 		#endregion
