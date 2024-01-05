@@ -111,6 +111,13 @@ if ( results.Success )
 
 // Output:
 //  {?speaker=astrid, ?other=jordan, ?r0=30, ?r1=-20}
+
+// Optionally you could also pass initial bindings to a query to limit the results
+
+result = new DBQuery()
+    .Where( "astrid.relationships.?other.reputation!?r" )
+    .Where( "gte ?r 10" )
+    .Run( db, new Dictionary<string, string>() { { "?other", "lee" } } );
 ```
 
 ### Query Operators
