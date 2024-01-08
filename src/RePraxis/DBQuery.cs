@@ -62,9 +62,10 @@ namespace RePraxis
 		/// any variables within the query, it returns all valid bindings for those
 		/// variables as an array of dictionaries.
 		/// </returns>
-		public QueryResult Run(RePraxisDatabase db, Dictionary<string, string> bindings)
+		public QueryResult Run(RePraxisDatabase db, Dictionary<string, string>[] bindings)
 		{
-			var result = new QueryResult( true, new Dictionary<string, string>[] { bindings } );
+
+			var result = new QueryResult( true, bindings );
 
 			foreach ( string expressionStr in _expressions )
 			{
@@ -144,9 +145,25 @@ namespace RePraxis
 			return result;
 		}
 
+		/// <summary>
+		/// Run the query on the provided database
+		/// </summary>
+		/// <param name="db"></param>
+		/// <returns></returns>
 		public QueryResult Run(RePraxisDatabase db)
 		{
-			return Run( db, new Dictionary<string, string>() );
+			return Run( db, new Dictionary<string, string>[0] );
+		}
+
+		/// <summary>
+		/// Run the query on the provided database
+		/// </summary>
+		/// <param name="db"></param>
+		/// <param name="bindings"></param>
+		/// <returns></returns>
+		public QueryResult Run(RePraxisDatabase db, Dictionary<string, string> bindings)
+		{
+			return Run( db, new Dictionary<string, string>[] { bindings } );
 		}
 
 		#endregion
@@ -216,25 +233,21 @@ namespace RePraxis
 		/// <returns></returns>
 		public static List<Dictionary<string, string>> UnifyAll(RePraxisDatabase database, QueryResult result, string[] sentences)
 		{
-			var possibleBindings = result.Bindings.ToList();
+			List<Dictionary<string, string>> possibleBindings = result.Bindings.ToList();
 
-			foreach ( var key in sentences )
+			foreach ( var sentence in sentences )
 			{
 				var iterativeBindings = new List<Dictionary<string, string>>();
-				var newBindings = Unify( database, key );
+				var newBindings = Unify( database, sentence );
 
 				if ( possibleBindings.Count == 0 )
 				{
+					// Copy the new bindings to the iterative bindings list
 					foreach ( var binding in newBindings )
 					{
-						var nextUnification = new Dictionary<string, string>();
-
-						foreach ( var k in binding.Keys )
-						{
-							nextUnification[k] = binding[k];
-						}
-
-						iterativeBindings.Add( nextUnification );
+						iterativeBindings.Add(
+							new Dictionary<string, string>( binding )
+						);
 					}
 				}
 				else

@@ -57,17 +57,49 @@ namespace RePraxis
 		{
 			if ( DBQuery.HasVariables( statement ) )
 			{
-				var bindings = DBQuery.UnifyAll( database, result, new string[] { statement } );
+				// If there are no existing bindings, then this is the first statement in the query
+				// or no previous statements contained variables.
+				if ( result.Bindings.Count() == 0 )
+				{
+					// We need to find bindings for all of the variables in this expression
+					var bindings = DBQuery.UnifyAll( database, result, new string[] { statement } );
 
-				if ( bindings.Count() == 0 ) return new QueryResult( false );
+					// If bindings for variables are found then we know this expression fails
+					// because we want to ensure that the statement is never true
+					if ( bindings.Count > 0 ) return new QueryResult( false );
 
-				var validBindings = bindings
+					// Continue the query.
+					return result;
+				}
+
+				// If we have existing bindings, we need to filter the existing bindings
+				var validBindings = result.Bindings
 					.Where(
 						(binding) =>
 						{
-							return !database.Assert(
-								RePraxisHelpers.BindSentence( statement, binding )
-							);
+							// Try to build a new sentence from the bindings and the expression's
+							// statement.
+							var sentence = RePraxisHelpers.BindSentence( statement, binding );
+
+							if ( DBQuery.HasVariables( sentence ) )
+							{
+								// Treat the new sentence like its first in the query
+								// and do a sub-unification, swapping out the result for an empty
+								// one without existing bindings
+								var scopedBindings = DBQuery.UnifyAll(
+									database,
+									new QueryResult( true ),
+									new string[] { sentence }
+								);
+
+								// If any of the remaining variables are bound in the scoped
+								// bindings, then the entire binding fails
+								if ( scopedBindings.Count > 0 ) return false;
+
+								return true;
+							}
+
+							return !database.Assert( sentence );
 						}
 					)
 					.ToArray();

@@ -29,8 +29,10 @@ def get_project_version() -> str:
 
     try:
         version_elem = root.findall(".//Version")[0]
-    except IndexError:
-        raise Exception(f"Could not find <Version> element in: {CSPROJ_PATH}.")
+    except IndexError as exc:
+        raise RuntimeError(
+            f"Could not find <Version> element in: {CSPROJ_PATH}."
+        ) from exc
 
     version_text = version_elem.text
 
@@ -41,11 +43,14 @@ def get_project_version() -> str:
 
 
 def main():
-    # Create a new build
-    completed_proc = subprocess.run(["dotnet","build","--configuration","Release"])
+    """The main entry point for the script."""
 
-    if completed_proc.returncode != 0:
+    # Create a new build
+    try:
+        subprocess.run(["dotnet", "build", "--configuration", "Release"], check=True)
+    except subprocess.CalledProcessError:
         print("An error occurred during build")
+        return
 
     # Copy the license and readme to the built distribution
     shutil.copyfile(LICENSE_PATH, BUILD_DIR / "LICENSE.md")

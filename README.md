@@ -77,6 +77,7 @@ RePraxisDatabase db = new RePraxisDatabase();
 // Add new information into the database
 db.Insert( "astrid.relationships.jordan.reputation!30" );
 db.Insert( "astrid.relationships.jordan.tags.rivalry" );
+db.Insert( "astrid.relationships.jordan.tags.friend" );
 db.Insert( "astrid.relationships.britt.reputation!-10" );
 db.Insert( "astrid.relationships.britt.tags.ex_lover" );
 db.Insert( "astrid.relationships.lee.reputation!20" );
@@ -94,23 +95,17 @@ QueryResult result =
         .Where( "neq ?speaker player" )
         .Run( db );
 
-if ( results.Success )
+if ( result.Success )
 {
     // Print the results
-    foreach ( var bindingDict in results.Bindings )
+    Console.WriteLine(result.ToPrettyString());
+
+    foreach (Dictionary<string, string> binding in result.Bindings)
     {
-        Console.WriteLine(
-            "{"
-            + string.Join(
-               ", ", bindingDict.Select( b => b.Key + "=" + b.Value ).ToArray()
-            )
-            + "}"
-        );
+        // Do something
     }
 }
 
-// Output:
-//  {?speaker=astrid, ?other=jordan, ?r0=30, ?r1=-20}
 
 // Optionally you could also pass initial bindings to a query to limit the results
 
@@ -122,15 +117,136 @@ result = new DBQuery()
 
 More examples are available under the `tests` directory.
 
-### Query Operators
+### Query statement types
 
-- `not <sentence>`: Checks if a sentence is not present in the database
-- `eq a b`: Checks if `a` is equal to `b`, where `a` and `b` must be variables, single symbols, or integers/floats.
-- `neq a b`: Checks if `a` is not equal to `b`, where `a` and `b` must be variables, single symbols, or integers/floats.
-- `gt a b`: Checks if `a` is greater than `b`, where `a` and `b` must be variables, single symbols, or integers/floats.
-- `lt a b`: Checks if `a` is less than to `b`, where `a` and `b` must be variables, single symbols, or integers/floats.
-- `gte a b`: Checks if `a` is greater than or equal to `b`, where `a` and `b` must be variables, single symbols, or integers/floats.
-- `lte a b`: Checks if `a` is less than or equal to `b`, where `a` and `b` must be variables, single symbols, or integers/floats.
+Statements in the query are ran sequentially in the same order they were provided. Some statements have slightly different semantics based depending if they contain variables or are the first statement in the query.
+
+#### Assertion statement
+
+This statement when used without variables will check if the statement holds true within the database. If the statement does not hold true, the query will stop evaluating and return a failed result.
+
+```csharp
+result = new DBQuery()
+    .Where( "astrid.relationships.jordan.reputation!30" )
+```
+
+If variables are provided, the statement will find all entries in the database that can bind to those variables. All bindings are saved to the query result. If no valid bindings are found, the query ends and returns a failed result. If an assertion with variables has preceding statements or initial bindings were provided to the query, the statement will filter the existing bindings for those that satisfy it.
+
+```csharp
+// Try to find all ?other, where astrid's reputation to that ?other is 30
+result = new DBQuery()
+    .Where( "astrid.relationships.?other.reputation!30" )
+```
+
+```csharp
+// You can also use multiple variables in the same statement
+// Below we bind the target of all astrid's relationships and their corresponding
+// reputation value, to the variables ?other and ?rep.
+result = new DBQuery()
+    .Where( "astrid.relationships.?other.reputation!?rep" )
+```
+
+```csharp
+// Below we get all astrid's relationships with the 'friend' tag (jordan and lee)
+// Next we filter those bindings for those where the reputation is 20
+// This will limit the result to ?other=lee
+result = new DBQuery()
+    .Where( "astrid.relationships.?other.tags.friend" )
+    .Where( "astrid.relationships.?other.reputation!20" )
+```
+
+#### Not-statement (negation)
+
+Not-statements are slightly tricky to understand. Their meaning changes based on the existence of variables, existing bindings, and their position in the statement order. Also while you may use variables within a not statement, that statement can never bind new values to variables, it is purely for filtering.
+
+If a not-statement appears as the first statement in a query, and the statement does not have any variables, the statement succeeds if the sentence being negated does not appear in the database. This case is not affected by the statement's position in the order. If the statement fails, the entire query fails.
+
+```csharp
+// The following succeeds because "astrid.relationships.jordan.reputation!20" is
+// not a true statement in the database
+var result = new DBQuery()
+    .Where( "not astrid.relationships.jordan.reputation!20" )
+    .Run( db );
+```
+
+```csharp
+// The following fails because "astrid.relationships.jordan.reputation!30" is
+// a true statement in the database
+var result = new DBQuery()
+    .Where( "not astrid.relationships.jordan.reputation!30" )
+    .Run( db );
+```
+
+Not-statements that contain variables change meaning based on existing bindings/execution order. If a not-statement appears first in the query and has variables, then the statement passes if there does not exist an entry in the database that makes the sentence in the statement true. See the example below.
+
+```csharp
+// This query succeeds when there does not exist an ?other that astrid has a relationship with
+var result = new DBQuery()
+    .Where( "not astrid.relationships.?other" )
+    .Run( db );
+```
+
+Consider the query below. When working with values, you might be tempted to think that the query below binds all `?other` where the reputation is not 15. That is **incorrect**. Like the query above this statement passes if there is no `?other` for which astrid's reputation toward them is 15.
+
+```csharp
+// Passes when: for all relationships astrid has with all ?others,
+// no relationship has a reputation of 15
+var result = new DBQuery()
+    .Where( "not astrid.relationships.?other.reputation!15" )
+    .Run( db );
+```
+
+If you wanted to get all relationships to other where reputation does not equal 15, you need to use two separate statements. The code below first binds all "others" and their corresponding reputation values, then it filters for those not equal to 15. We discuss relational statements in the next section.
+
+```csharp
+var result = new DBQuery()
+    .Where( "astrid.relationships.?other.reputation!?rep" )
+    .Where( "neq ?rep 15" )
+    .Run( db );
+```
+
+If the not-statement is preceded by other queries or initial bindings are provided, then the statement filters all intermediate query bindings for those where the statement does not hold.
+
+```csharp
+// Given that ?other is britt, the statement "astrid.relationships.?other.reputation!30"
+// is not true. So, the query passes.
+var result = new DBQuery()
+    .Where( "not astrid.relationships.?other.reputation!30" )
+    .Run( db, new Dictionary<string, string>()
+    {
+        {"?other", "britt"}
+    } );
+```
+
+```csharp
+// First the query binds all ?others that astrid has a relationship with,
+// then the not-statement filters those results for those where the statement
+// is not true. This query would return britt and lee as valid bindings of other
+var result = new DBQuery()
+    .Where( "astrid.relationships.?other" )
+    .Where( "not astrid.relationships.?other.reputation!30" )
+    .Run( db );
+```
+
+#### Relational statements
+
+Relational statements are used to check for equality/inequality. Each statement starts with an operation name followed by two values. These values must be be variables, single symbols (strings), or integers/floats. You **cannot** pass a sentence as a parameter. You should first bind your value of interest to a variable, then use it in a relational statement.
+
+- `eq a b`: Checks if `a` is equal to `b`
+- `neq a b`: Checks if `a` is not equal to `b`
+- `gt a b`: Checks if `a` is greater than `b`
+- `lt a b`: Checks if `a` is less than to `b`
+- `gte a b`: Checks if `a` is greater than or equal to `b`
+- `lte a b`: Checks if `a` is less than or equal to `b`
+
+Below is an example query provided earlier that uses the `neq` (not equal) operator to filter results.
+
+```csharp
+var result = new DBQuery()
+    .Where( "astrid.relationships.?other.reputation!?rep" )
+    .Where( "neq ?rep 15" )
+    .Run( db );
+```
 
 ## Building Re:Praxis from source
 

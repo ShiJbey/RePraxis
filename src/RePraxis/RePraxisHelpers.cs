@@ -23,7 +23,14 @@ namespace RePraxis
 
 				if ( node.NodeType == NodeType.VARIABLE )
 				{
-					finalSentence += bindings[node.Symbol];
+					if ( bindings.ContainsKey( node.Symbol ) )
+					{
+						finalSentence += bindings[node.Symbol];
+					}
+					else
+					{
+						finalSentence += node.Symbol;
+					}
 				}
 				else
 				{
