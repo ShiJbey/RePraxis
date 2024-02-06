@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on <https://common-changelog.org/>, and this project adheres mostly to Semantic Versioning. However, all releases before 1.0.0 have breaking changes between minor-version updates.
 
-## [1.3.0] - Unreleased
+## [1.3.0] - 2024-02-06
 
 ### Changed
 
