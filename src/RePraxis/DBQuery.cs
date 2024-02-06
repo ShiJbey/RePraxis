@@ -62,10 +62,10 @@ namespace RePraxis
 		/// any variables within the query, it returns all valid bindings for those
 		/// variables as an array of dictionaries.
 		/// </returns>
-		public QueryResult Run(RePraxisDatabase db, Dictionary<string, string>[] bindings)
+		public QueryResult Run(RePraxisDatabase db, Dictionary<string, object>[] bindings)
 		{
 
-			var result = new QueryResult( true, bindings );
+			QueryState state = new QueryState( true, bindings );
 
 			foreach ( string expressionStr in _expressions )
 			{
@@ -79,7 +79,7 @@ namespace RePraxis
 				// This is an assertion expression that may contain variables
 				if ( expressionParts.Length == 1 )
 				{
-					result = new AssertExpression( expressionParts[0] ).Evaluate( db, result );
+					state = new AssertExpression( expressionParts[0] ).Evaluate( db, state );
 				}
 				// This is probably a not expression
 				else if ( expressionParts.Length == 2 )
@@ -87,7 +87,7 @@ namespace RePraxis
 					if ( expressionParts[0] == "not" )
 					{
 						// This is a "not x.y.z" expression
-						result = new NotExpression( expressionParts[1] ).Evaluate( db, result );
+						state = new NotExpression( expressionParts[1] ).Evaluate( db, state );
 					}
 					else
 					{
@@ -103,28 +103,28 @@ namespace RePraxis
 					switch ( comparisonOp )
 					{
 						case "eq":
-							result = new EqualsExpression( expressionParts[1], expressionParts[2] )
-								.Evaluate( db, result );
+							state = new EqualsExpression( expressionParts[1], expressionParts[2] )
+								.Evaluate( db, state );
 							break;
 						case "neq":
-							result = new NotEqualExpression( expressionParts[1], expressionParts[2] )
-								.Evaluate( db, result );
+							state = new NotEqualExpression( expressionParts[1], expressionParts[2] )
+								.Evaluate( db, state );
 							break;
 						case "lt":
-							result = new LessThanExpression( expressionParts[1], expressionParts[2] )
-								.Evaluate( db, result );
+							state = new LessThanExpression( expressionParts[1], expressionParts[2] )
+								.Evaluate( db, state );
 							break;
 						case "gt":
-							result = new GreaterThanExpression( expressionParts[1], expressionParts[2] )
-								.Evaluate( db, result );
+							state = new GreaterThanExpression( expressionParts[1], expressionParts[2] )
+								.Evaluate( db, state );
 							break;
 						case "lte":
-							result = new LessThanEqualToExpression( expressionParts[1], expressionParts[2] )
-								.Evaluate( db, result );
+							state = new LessThanEqualToExpression( expressionParts[1], expressionParts[2] )
+								.Evaluate( db, state );
 							break;
 						case "gte":
-							result = new GreaterThanEqualToExpression( expressionParts[1], expressionParts[2] )
-								.Evaluate( db, result );
+							state = new GreaterThanEqualToExpression( expressionParts[1], expressionParts[2] )
+								.Evaluate( db, state );
 							break;
 						default:
 							throw new Exception(
@@ -139,10 +139,10 @@ namespace RePraxis
 				}
 
 				// Step 3: Check if the query has failed and quit processing if true
-				if ( !result.Success ) break;
+				if ( !state.Success ) break;
 			}
 
-			return result;
+			return state.ToResult();
 		}
 
 		/// <summary>
@@ -152,7 +152,7 @@ namespace RePraxis
 		/// <returns></returns>
 		public QueryResult Run(RePraxisDatabase db)
 		{
-			return Run( db, new Dictionary<string, string>[0] );
+			return Run( db, new Dictionary<string, object>[0] );
 		}
 
 		/// <summary>
@@ -161,9 +161,9 @@ namespace RePraxis
 		/// <param name="db"></param>
 		/// <param name="bindings"></param>
 		/// <returns></returns>
-		public QueryResult Run(RePraxisDatabase db, Dictionary<string, string> bindings)
+		public QueryResult Run(RePraxisDatabase db, Dictionary<string, object> bindings)
 		{
-			return Run( db, new Dictionary<string, string>[] { bindings } );
+			return Run( db, new Dictionary<string, object>[] { bindings } );
 		}
 
 		#endregion
@@ -178,7 +178,7 @@ namespace RePraxis
 		/// </summary>
 		/// <param name="sentence"></param>
 		/// <returns></returns>
-		public static List<Dictionary<string, string>> Unify(RePraxisDatabase database, string sentence)
+		public static List<Dictionary<string, INode>> Unify(RePraxisDatabase database, string sentence)
 		{
 			List<QueryBindingContext> unified = new List<QueryBindingContext>
 				{
@@ -199,9 +199,9 @@ namespace RePraxis
 						{
 							var unification =
 								new QueryBindingContext(
-									new Dictionary<string, string>( entry.Bindings ), child );
+									new Dictionary<string, INode>( entry.Bindings ), child );
 
-							unification.Bindings[token.Symbol] = child.Symbol;
+							unification.Bindings[token.Symbol] = child;
 
 							nextUnified.Add( unification );
 						}
@@ -231,13 +231,13 @@ namespace RePraxis
 		/// </summary>
 		/// <param name="sentences"></param>
 		/// <returns></returns>
-		public static List<Dictionary<string, string>> UnifyAll(RePraxisDatabase database, QueryResult result, string[] sentences)
+		public static List<Dictionary<string, INode>> UnifyAll(RePraxisDatabase database, QueryState state, string[] sentences)
 		{
-			List<Dictionary<string, string>> possibleBindings = result.Bindings.ToList();
+			List<Dictionary<string, INode>> possibleBindings = state.Bindings.ToList();
 
 			foreach ( var sentence in sentences )
 			{
-				var iterativeBindings = new List<Dictionary<string, string>>();
+				var iterativeBindings = new List<Dictionary<string, INode>>();
 				var newBindings = Unify( database, sentence );
 
 				if ( possibleBindings.Count == 0 )
@@ -246,7 +246,7 @@ namespace RePraxis
 					foreach ( var binding in newBindings )
 					{
 						iterativeBindings.Add(
-							new Dictionary<string, string>( binding )
+							new Dictionary<string, INode>( binding )
 						);
 					}
 				}
@@ -258,7 +258,7 @@ namespace RePraxis
 						{
 							var newKeys = binding.Keys.Where( k => !oldBinding.ContainsKey( k ) );
 							var oldKeys = binding.Keys.Where( k => oldBinding.ContainsKey( k ) );
-							bool existsIncompatibleKey = oldKeys.Any( k => oldBinding[k] != binding[k] );
+							bool existsIncompatibleKey = oldKeys.Any( k => !oldBinding[k].EqualTo( binding[k] ) );
 
 							if ( existsIncompatibleKey )
 							{
@@ -266,7 +266,7 @@ namespace RePraxis
 							}
 							else
 							{
-								var nextUnification = new Dictionary<string, string>( oldBinding );
+								var nextUnification = new Dictionary<string, INode>( oldBinding );
 
 								foreach ( var k in newKeys )
 								{
@@ -283,17 +283,6 @@ namespace RePraxis
 			}
 
 			return possibleBindings.Where( bindings => bindings.Count() > 0 ).ToList();
-		}
-
-		/// <summary>
-		/// Return true if the sentence contains variables.
-		/// </summary>
-		/// <param name="sentence"></param>
-		/// <returns></returns>
-		public static bool HasVariables(string sentence)
-		{
-			return RePraxisHelpers.ParseSentence( sentence )
-				.Where( node => node.NodeType == NodeType.VARIABLE ).Count() > 0;
 		}
 
 		#endregion

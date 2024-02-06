@@ -1,3 +1,7 @@
 {
-    "cSpell.words": ["Versu"]
+    "cSpell.words": ["Versu"],
+    "markdownlint.config": {
+        "default": true,
+        "no-duplicate-heading": false
+    }
 }

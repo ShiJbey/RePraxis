@@ -6,7 +6,7 @@ namespace RePraxis
 		/// Evaluate the expression and update the result
 		/// </summary>
 		/// <param name="database"></param>
-		/// <param name="result"></param>
-		public QueryResult Evaluate(RePraxisDatabase database, QueryResult result);
+		/// <param name="state"></param>
+		public QueryState Evaluate(RePraxisDatabase database, QueryState state);
 	}
 }

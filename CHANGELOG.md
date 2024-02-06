@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on <https://common-changelog.org/>, and this project adheres mostly to Semantic Versioning. However, all releases before 1.0.0 have breaking changes between minor-version updates.
 
+## [1.3.0] - Unreleased
+
+### Changed
+
+- **breaking change**: `QueryResult.Bindings` is now of type `Dictionary<string, object>` mapping variables to their parsed values
+- **breaking change**: `IQueryExpression.Evaluate()` now accepts and returns a `QueryState` rather than a `QueryResult`.
+- Refactored internal project structure.
+
+### Added
+
+- Added `Clear()` Method to `RePraxisDatabase` as an alias to `RePraxisDatabase.Root.ClearChildren()`.
+- Added `QueryResult.LimitToVars()` method to simplify limiting query results to a set of variables.
+- Added `QueryState` class to track intermediate query results
+
 ## [1.2.0] - 2024-01-08
 
 ### Added
@@ -41,3 +55,4 @@ _Initial release._
 [1.0.0]: https://github.com/ShiJbey/RePraxis/releases/tag/v1.0.0
 [1.1.0]: https://github.com/ShiJbey/RePraxis/releases/tag/v1.1.0
 [1.2.0]: https://github.com/ShiJbey/RePraxis/releases/tag/v1.2.0
+[1.3.0]: https://github.com/ShiJbey/RePraxis/releases/tag/v1.3.0

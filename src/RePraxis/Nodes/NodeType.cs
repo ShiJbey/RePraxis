@@ -8,6 +8,7 @@ namespace RePraxis
 		VARIABLE = 0,
 		SYMBOL = 1,
 		INT = 2,
-		FLOAT = 3
+		FLOAT = 3,
+		STRING = 4,
 	}
 }

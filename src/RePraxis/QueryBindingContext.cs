@@ -7,16 +7,31 @@ namespace RePraxis
 	/// </summary>
 	public class QueryBindingContext
 	{
-		public Dictionary<string, string> Bindings { get; }
+		#region Properties
+
+		/// <summary>
+		/// Variable names mapped to their bound node values
+		/// </summary>
+		public Dictionary<string, INode> Bindings { get; }
+
+		/// <summary>
+		/// The subtree of the database that these bindings apply to.
+		/// </summary>
 		public INode SubTree { get; }
 
-		public QueryBindingContext(Dictionary<string, string> bindings, INode subTree)
+		#endregion
+
+		#region Constructors
+
+		public QueryBindingContext(Dictionary<string, INode> bindings, INode subTree)
 		{
 			Bindings = bindings;
 			SubTree = subTree;
 		}
 
 		public QueryBindingContext(INode subtree)
-			: this( new Dictionary<string, string>(), subtree ) { }
+			: this( new Dictionary<string, INode>(), subtree ) { }
+
+		#endregion
 	}
 }

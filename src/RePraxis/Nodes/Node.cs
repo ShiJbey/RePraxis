@@ -5,7 +5,8 @@ namespace RePraxis
 {
 	public abstract class Node<T> : INode where T : notnull
 	{
-		#region Protected Fields
+		#region Fields
+
 		/// <summary>
 		/// A map of the node's children's symbols mapped to their instances
 		/// </summary>
@@ -13,12 +14,18 @@ namespace RePraxis
 
 		#endregion
 
+		#region Properties
+
 		public string Symbol { get; }
 		public T Value { get; }
 		public NodeCardinality Cardinality { get; }
 		public abstract NodeType NodeType { get; }
 		public IEnumerable<INode> Children => _children.Values;
 		public INode? Parent { get; set; }
+
+		#endregion
+
+		#region Constructors
 
 		public Node(string symbol, T value, NodeCardinality cardinality)
 		{
@@ -29,22 +36,9 @@ namespace RePraxis
 			Parent = null;
 		}
 
-		public object GetValue()
-		{
-			return Value;
-		}
+		#endregion
 
-		public override string ToString()
-		{
-			return Symbol;
-		}
-
-		public abstract bool EqualTo(INode other);
-		public abstract bool NotEqualTo(INode other);
-		public abstract bool GreaterThanEqualTo(INode other);
-		public abstract bool LessThanEqualTo(INode other);
-		public abstract bool LessThan(INode other);
-		public abstract bool GreaterThan(INode other);
+		#region Operator Overloads
 
 		public static bool operator ==(Node<T> a, INode b)
 		{
@@ -98,7 +92,19 @@ namespace RePraxis
 			return base.GetHashCode();
 		}
 
-		#region Methods
+		#endregion
+
+		#region Public Methods
+
+		public object GetValue()
+		{
+			return Value;
+		}
+
+		public override string ToString()
+		{
+			return Symbol;
+		}
 
 		/// <summary>
 		/// Add a new child node to this node
@@ -106,6 +112,13 @@ namespace RePraxis
 		/// <param name="node"></param>
 		public void AddChild(INode node)
 		{
+			if ( Cardinality == NodeCardinality.NONE )
+			{
+				throw new System.Exception(
+					"Cannot add child to node with cardinality NONE"
+				);
+			}
+
 			if ( Cardinality == NodeCardinality.ONE && _children.Count >= 1 )
 			{
 				throw new System.Exception(
@@ -162,6 +175,10 @@ namespace RePraxis
 		/// </summary>
 		public void ClearChildren()
 		{
+			foreach ( var (_, child) in _children )
+			{
+				child.ClearChildren();
+			}
 			_children.Clear();
 		}
 
@@ -182,6 +199,18 @@ namespace RePraxis
 		}
 
 		public abstract INode Copy();
+
+		public abstract bool EqualTo(INode other);
+
+		public abstract bool NotEqualTo(INode other);
+
+		public abstract bool GreaterThanEqualTo(INode other);
+
+		public abstract bool LessThanEqualTo(INode other);
+
+		public abstract bool LessThan(INode other);
+
+		public abstract bool GreaterThan(INode other);
 
 		#endregion
 	}

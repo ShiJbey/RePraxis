@@ -3,13 +3,9 @@ using System;
 namespace RePraxis
 {
 	/// <summary>
-	/// A database that enables users to query for information using exclusion logic queries.
-	///
-	/// <para>
-	/// This class is inspired by the Praxis logic language created by
-	/// Emily Short and Richard Evans for the Versu interactive fiction
-	/// engine.
-	/// </para>
+	/// A database instance. Users can insert, delete, and assert logical statements. Inserted
+	/// statements are stored in a tree structure containing nodes of various templated data types.
+	/// Users can query the database for specific patterns using the <c>DBQuery</c> class.
 	/// </summary>
 	public class RePraxisDatabase
 	{
@@ -155,6 +151,14 @@ namespace RePraxis
 
 			// Remove the child
 			return currentNode.RemoveChild( lastToken.Symbol );
+		}
+
+		/// <summary>
+		/// Clear the contents of the database.
+		/// </summary>
+		public void Clear()
+		{
+			Root.ClearChildren();
 		}
 
 		#endregion

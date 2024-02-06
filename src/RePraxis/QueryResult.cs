@@ -9,6 +9,8 @@ namespace RePraxis
 	/// </summary>
 	public class QueryResult
 	{
+		#region Properties
+
 		/// <summary>
 		/// Did all statements in the query pass or evaluate to true
 		/// </summary>
@@ -17,10 +19,13 @@ namespace RePraxis
 		/// <summary>
 		/// Bindings for any variables present in the query
 		/// </summary>
-		public Dictionary<string, string>[] Bindings { get; }
+		public Dictionary<string, object>[] Bindings { get; }
 
+		#endregion
 
-		public QueryResult(bool success, IEnumerable<Dictionary<string, string>> bindings)
+		#region Constructors
+
+		public QueryResult(bool success, IEnumerable<Dictionary<string, object>> bindings)
 		{
 			Success = success;
 			Bindings = bindings.ToArray();
@@ -29,7 +34,44 @@ namespace RePraxis
 		public QueryResult(bool success)
 		{
 			Success = success;
-			Bindings = new Dictionary<string, string>[0];
+			Bindings = new Dictionary<string, object>[0];
+		}
+
+		#endregion
+
+		#region Public Methods
+
+		/// <summary>
+		/// Limit query bindings to a subset of select variables.
+		/// </summary>
+		/// <param name="vars"></param>
+		/// <returns></returns>
+		public QueryResult LimitToVar(params string[] vars)
+		{
+			if ( !Success )
+			{
+				return new QueryResult( false );
+			}
+
+			if ( vars.Length == 0 )
+			{
+				return new QueryResult( true );
+			}
+
+			Dictionary<string, object>[] filteredResults =
+				new Dictionary<string, object>[Bindings.Length];
+
+			for ( int i = 0; i < Bindings.Length; i++ )
+			{
+				filteredResults[i] = new Dictionary<string, object>();
+
+				foreach ( var varName in vars )
+				{
+					filteredResults[i][varName] = Bindings[i][varName];
+				}
+			}
+
+			return new QueryResult( true, filteredResults );
 		}
 
 		/// <summary>
@@ -58,5 +100,7 @@ namespace RePraxis
 
 			return sb.ToString();
 		}
+
+		#endregion
 	}
 }

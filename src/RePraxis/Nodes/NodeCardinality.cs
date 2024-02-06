@@ -5,7 +5,8 @@ namespace RePraxis
 	/// </summary>
 	public enum NodeCardinality
 	{
-		ONE = 0,
-		MANY = 1
+		NONE,
+		ONE,
+		MANY,
 	}
 }

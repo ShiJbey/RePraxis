@@ -1,5 +1,5 @@
 using System.Text;
-
+using System.Linq;
 using System.Collections.Generic;
 
 namespace RePraxis
@@ -7,15 +7,26 @@ namespace RePraxis
 	public static class RePraxisHelpers
 	{
 		/// <summary>
+		/// Return true if the sentence contains variables.
+		/// </summary>
+		/// <param name="sentence"></param>
+		/// <returns></returns>
+		public static bool HasVariables(string sentence)
+		{
+			return ParseSentence( sentence )
+				.Where( node => node.NodeType == NodeType.VARIABLE ).Count() > 0;
+		}
+
+		/// <summary>
 		/// Creates a new sentence by binding variables to entries within the bindings.
 		/// </summary>
 		/// <param name="sentence"></param>
 		/// <param name="bindings"></param>
 		/// <returns></returns>
-		public static string BindSentence(string sentence, Dictionary<string, string> bindings)
+		public static string BindSentence(string sentence, Dictionary<string, INode> bindings)
 		{
-			var nodes = ParseSentence( sentence );
-			var finalSentence = "";
+			INode[] nodes = ParseSentence( sentence );
+			string finalSentence = "";
 
 			for ( int i = 0; i < nodes.Length; ++i )
 			{
@@ -25,7 +36,7 @@ namespace RePraxis
 				{
 					if ( bindings.ContainsKey( node.Symbol ) )
 					{
-						finalSentence += bindings[node.Symbol];
+						finalSentence += bindings[node.Symbol].Symbol;
 					}
 					else
 					{
@@ -93,6 +104,38 @@ namespace RePraxis
 			}
 
 			return new SymbolNode( token, cardinality );
+		}
+
+		/// <summary>
+		/// Create a new node for the given value.
+		/// </summary>
+		/// <param name="value"></param>
+		/// <returns></returns>
+		public static INode CreateNode(object value)
+		{
+			if ( value is int )
+			{
+				return new IntNode( (int)value, NodeCardinality.NONE );
+			}
+			else if ( value is long )
+			{
+				return new IntNode( (int)(long)value, NodeCardinality.NONE );
+			}
+			else if ( value is float )
+			{
+				return new FloatNode( (float)value, NodeCardinality.NONE );
+			}
+			else if ( value is double )
+			{
+				return new FloatNode( (float)(double)value, NodeCardinality.NONE );
+			}
+			else if ( value is string )
+			{
+				return new SymbolNode( (string)value, NodeCardinality.NONE );
+			}
+
+			throw new System.ArgumentException(
+				$"Object ({value}) cannot be converted to a valid node type." );
 		}
 
 		/// <summary>
