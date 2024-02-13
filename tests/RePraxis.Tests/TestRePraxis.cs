@@ -1,3 +1,5 @@
+using System.Xml.Serialization;
+
 namespace RePraxis.Tests;
 
 [TestFixture]
@@ -307,5 +309,35 @@ public class Tests
 			.Run( db );
 
 		Assert.That( queryResult.Bindings[0]["?fullName"], Is.EqualTo( "Toph Beifong" ) );
+	}
+
+	/// <summary>
+	/// Ensure removing data that does not exist in the database never results
+	/// in an error.
+	/// </summary>
+	[Test]
+	public void TestRemoveNonexistentData()
+	{
+		RePraxisDatabase db = new RePraxisDatabase();
+
+		db.Delete( "katara" );
+
+		Assert.True( true );
+	}
+
+	/// <summary>
+	/// Ensure running an empty query against the database will always yield
+	/// a successful result.
+	/// </summary>
+	[Test]
+	public void TestEmptyQuery()
+	{
+		RePraxisDatabase db = new RePraxisDatabase();
+
+		QueryResult queryResult;
+
+		queryResult = new DBQuery().Run( _db );
+
+		Assert.That( queryResult.Success, Is.True );
 	}
 }
