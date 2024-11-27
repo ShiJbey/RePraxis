@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace RePraxis
 {
@@ -9,12 +10,27 @@ namespace RePraxis
 	/// </summary>
 	public class RePraxisDatabase
 	{
+		#region Fields
+
+		/// <summary>
+		/// Callback functions executed when asserting or querying a path.
+		/// </summary>
+		private Dictionary<string, List<Action<RePraxisDatabase>>> beforeAccessListeners;
+
+		#endregion
+
 		#region Properties
 
 		/// <summary>
-		/// A reference to the root node of the database
+		/// A reference to the root node of the database.
 		/// </summary>
 		public INode Root { get; }
+
+		/// <summary>
+		/// Callback functions executed when asserting or querying a path.
+		/// </summary>
+		public Dictionary<string, List<Action<RePraxisDatabase>>> BeforeAccessListeners =>
+			beforeAccessListeners;
 
 		#endregion
 
@@ -23,6 +39,7 @@ namespace RePraxis
 		public RePraxisDatabase()
 		{
 			Root = new SymbolNode( "root", NodeCardinality.MANY );
+			beforeAccessListeners = new Dictionary<string, List<Action<RePraxisDatabase>>>();
 		}
 
 		#endregion
@@ -38,13 +55,13 @@ namespace RePraxis
 		/// </exception>
 		public void Insert(string sentence)
 		{
-			INode[] nodes = RePraxisHelpers.ParseSentence( sentence );
+			Sentence parsedSentence = new Sentence( sentence );
 
 			INode subtree = Root;
 
-			for ( int i = 0; i < nodes.Length; i++ )
+			for ( int i = 0; i < parsedSentence.Nodes.Length; i++ )
 			{
-				var node = nodes[i].Copy();
+				var node = parsedSentence.Nodes[i].Copy();
 
 				if ( node.NodeType == NodeType.VARIABLE )
 				{
@@ -93,13 +110,27 @@ namespace RePraxis
 		/// </exception>
 		public bool Assert(string sentence)
 		{
-			INode[] nodes = RePraxisHelpers.ParseSentence( sentence );
+			return Assert( new Sentence( sentence ) );
+		}
+
+		/// <summary>
+		/// Check if a given sentence exists within the database.
+		/// </summary>
+		/// <param name="sentence"></param>
+		/// <returns></returns>
+		/// <exception cref="ArgumentException">
+		/// Thrown when a sentence contains variables.
+		/// </exception>
+		public bool Assert(Sentence sentence)
+		{
+			// Perform callback checks
+			ExecuteBeforeAccessListeners( sentence );
 
 			INode currentNode = Root;
 
-			for ( int i = 0; i < nodes.Length; i++ )
+			for ( int i = 0; i < sentence.Nodes.Length; i++ )
 			{
-				INode node = nodes[i];
+				INode node = sentence.Nodes[i];
 
 				if ( node.NodeType == NodeType.VARIABLE )
 				{
@@ -113,7 +144,7 @@ namespace RePraxis
 				if ( !currentNode.HasChild( node.Symbol ) ) return false;
 
 				// We can stop iterating since we don't care about the cardinality of the last node
-				if ( i == nodes.Length - 1 ) return true;
+				if ( i == sentence.Nodes.Length - 1 ) return true;
 
 				// Update the current node for a cardinality check
 				currentNode = currentNode.GetChild( node.Symbol );
@@ -134,20 +165,19 @@ namespace RePraxis
 		/// </returns>
 		public bool Delete(string sentence)
 		{
-
-			INode[] nodes = RePraxisHelpers.ParseSentence( sentence );
+			Sentence parsedSentence = new Sentence( sentence );
 
 			INode currentNode = Root;
 
 			// Loop until we get to the second to last node
-			for ( int i = 0; i < nodes.Length - 1; ++i )
+			for ( int i = 0; i < parsedSentence.Nodes.Length - 1; ++i )
 			{
-				var node = nodes[i];
+				var node = parsedSentence.Nodes[i];
 				currentNode = currentNode.GetChild( node.Symbol );
 			}
 
 			// Get a reference to the final node in the sentence
-			var lastToken = nodes[nodes.Length - 1];
+			var lastToken = parsedSentence.Nodes[parsedSentence.Nodes.Length - 1];
 
 			// Remove the child
 			return currentNode.RemoveChild( lastToken.Symbol );
@@ -159,6 +189,79 @@ namespace RePraxis
 		public void Clear()
 		{
 			Root.ClearChildren();
+		}
+
+		/// <summary>
+		/// Add the given callback to the path.
+		/// </summary>
+		/// <param name="path"></param>
+		/// <param name="callback"></param>
+		public void AddBeforeAccessListener(string path, Action<RePraxisDatabase> callback)
+		{
+			if ( !beforeAccessListeners.ContainsKey( path ) )
+			{
+				beforeAccessListeners[path] = new List<Action<RePraxisDatabase>>();
+			}
+
+			beforeAccessListeners[path].Add( callback );
+		}
+
+		/// <summary>
+		/// Remove the given callback from the path.
+		/// </summary>
+		/// <param name="path"></param>
+		/// <param name="callback"></param>
+		public void RemoveBeforeAccessListener(string path, Action<RePraxisDatabase> callback)
+		{
+			if ( beforeAccessListeners.ContainsKey( path ) )
+			{
+				beforeAccessListeners[path].Remove( callback );
+			}
+		}
+
+		/// <summary>
+		/// Remove all access listeners for a given path.
+		/// </summary>
+		/// <param name="path"></param>
+		public void RemoveAllBeforeAccessListeners(string path)
+		{
+			if ( beforeAccessListeners.ContainsKey( path ) )
+			{
+				beforeAccessListeners.Remove( path );
+			}
+		}
+
+		/// <summary>
+		/// Execute all BeforeAccessListeners for the given path.
+		/// </summary>
+		public List<string> ExecuteBeforeAccessListeners(string path)
+		{
+			return ExecuteBeforeAccessListeners( new Sentence( path ) );
+		}
+
+		/// <summary>
+		/// Execute all BeforeAccessListeners for the given sentence.
+		/// </summary>
+		public List<string> ExecuteBeforeAccessListeners(Sentence sentence)
+		{
+			List<string> executedCallbacks = new List<string>();
+
+			foreach ( var (path, callbacks) in beforeAccessListeners )
+			{
+				Sentence parsedPath = new Sentence( path );
+
+				if ( sentence.StartsWith( parsedPath ) )
+				{
+					executedCallbacks.Add( path );
+
+					foreach ( var cb in callbacks )
+					{
+						cb?.Invoke( this );
+					}
+				}
+			}
+
+			return executedCallbacks;
 		}
 
 		#endregion

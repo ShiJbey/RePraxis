@@ -65,7 +65,7 @@ namespace RePraxis
 		public QueryResult Run(RePraxisDatabase db, Dictionary<string, object>[] bindings)
 		{
 
-			QueryState state = new QueryState( true, bindings );
+			QueryState state = new QueryState( db, true, bindings );
 
 			foreach ( string expressionStr in _expressions )
 			{
@@ -79,7 +79,7 @@ namespace RePraxis
 				// This is an assertion expression that may contain variables
 				if ( expressionParts.Length == 1 )
 				{
-					state = new AssertExpression( expressionParts[0] ).Evaluate( db, state );
+					new AssertExpression( expressionParts[0] ).Evaluate( state );
 				}
 				// This is probably a not expression
 				else if ( expressionParts.Length == 2 )
@@ -87,7 +87,7 @@ namespace RePraxis
 					if ( expressionParts[0] == "not" )
 					{
 						// This is a "not x.y.z" expression
-						state = new NotExpression( expressionParts[1] ).Evaluate( db, state );
+						new NotExpression( expressionParts[1] ).Evaluate( state );
 					}
 					else
 					{
@@ -103,28 +103,28 @@ namespace RePraxis
 					switch ( comparisonOp )
 					{
 						case "eq":
-							state = new EqualsExpression( expressionParts[1], expressionParts[2] )
-								.Evaluate( db, state );
+							new EqualsExpression( expressionParts[1], expressionParts[2] )
+								.Evaluate( state );
 							break;
 						case "neq":
-							state = new NotEqualExpression( expressionParts[1], expressionParts[2] )
-								.Evaluate( db, state );
+							new NotEqualExpression( expressionParts[1], expressionParts[2] )
+								.Evaluate( state );
 							break;
 						case "lt":
-							state = new LessThanExpression( expressionParts[1], expressionParts[2] )
-								.Evaluate( db, state );
+							new LessThanExpression( expressionParts[1], expressionParts[2] )
+								.Evaluate( state );
 							break;
 						case "gt":
-							state = new GreaterThanExpression( expressionParts[1], expressionParts[2] )
-								.Evaluate( db, state );
+							new GreaterThanExpression( expressionParts[1], expressionParts[2] )
+								.Evaluate( state );
 							break;
 						case "lte":
-							state = new LessThanEqualToExpression( expressionParts[1], expressionParts[2] )
-								.Evaluate( db, state );
+							new LessThanEqualToExpression( expressionParts[1], expressionParts[2] )
+								.Evaluate( state );
 							break;
 						case "gte":
-							state = new GreaterThanEqualToExpression( expressionParts[1], expressionParts[2] )
-								.Evaluate( db, state );
+							new GreaterThanEqualToExpression( expressionParts[1], expressionParts[2] )
+								.Evaluate( state );
 							break;
 						default:
 							throw new Exception(
@@ -164,125 +164,6 @@ namespace RePraxis
 		public QueryResult Run(RePraxisDatabase db, Dictionary<string, object> bindings)
 		{
 			return Run( db, new Dictionary<string, object>[] { bindings } );
-		}
-
-		#endregion
-
-		#region Unification Methods
-
-		/// <summary>
-		/// Generates potential bindings from the database for a single sentence
-		///
-		/// This method does not take the current bindings into consideration. It
-		/// should only be called by the UnifyAll method
-		/// </summary>
-		/// <param name="sentence"></param>
-		/// <returns></returns>
-		public static List<Dictionary<string, INode>> Unify(RePraxisDatabase database, string sentence)
-		{
-			List<QueryBindingContext> unified = new List<QueryBindingContext>
-				{
-					new QueryBindingContext(database.Root)
-				};
-
-			var tokens = RePraxisHelpers.ParseSentence( sentence );
-
-			foreach ( var token in tokens )
-			{
-				List<QueryBindingContext> nextUnified = new List<QueryBindingContext>();
-
-				foreach ( var entry in unified )
-				{
-					foreach ( var child in entry.SubTree.Children )
-					{
-						if ( token.NodeType == NodeType.VARIABLE )
-						{
-							var unification =
-								new QueryBindingContext(
-									new Dictionary<string, INode>( entry.Bindings ), child );
-
-							unification.Bindings[token.Symbol] = child;
-
-							nextUnified.Add( unification );
-						}
-						else
-						{
-							if ( token.Symbol == child.Symbol )
-							{
-								nextUnified.Add( new QueryBindingContext( entry.Bindings, child ) );
-							}
-						}
-					}
-				}
-
-				unified = nextUnified;
-			}
-
-			return unified
-				.Select( unification => unification.Bindings )
-				.Where( binding => binding.Count() > 0 )
-				.ToList();
-		}
-
-		/// <summary>
-		/// Generates potential bindings from the database unifying across all sentences.
-		///
-		/// This method takes into consideration the bindings from the current results.
-		/// </summary>
-		/// <param name="sentences"></param>
-		/// <returns></returns>
-		public static List<Dictionary<string, INode>> UnifyAll(RePraxisDatabase database, QueryState state, string[] sentences)
-		{
-			List<Dictionary<string, INode>> possibleBindings = state.Bindings.ToList();
-
-			foreach ( var sentence in sentences )
-			{
-				var iterativeBindings = new List<Dictionary<string, INode>>();
-				var newBindings = Unify( database, sentence );
-
-				if ( possibleBindings.Count == 0 )
-				{
-					// Copy the new bindings to the iterative bindings list
-					foreach ( var binding in newBindings )
-					{
-						iterativeBindings.Add(
-							new Dictionary<string, INode>( binding )
-						);
-					}
-				}
-				else
-				{
-					foreach ( var oldBinding in possibleBindings )
-					{
-						foreach ( var binding in newBindings )
-						{
-							var newKeys = binding.Keys.Where( k => !oldBinding.ContainsKey( k ) );
-							var oldKeys = binding.Keys.Where( k => oldBinding.ContainsKey( k ) );
-							bool existsIncompatibleKey = oldKeys.Any( k => !oldBinding[k].EqualTo( binding[k] ) );
-
-							if ( existsIncompatibleKey )
-							{
-								continue;
-							}
-							else
-							{
-								var nextUnification = new Dictionary<string, INode>( oldBinding );
-
-								foreach ( var k in newKeys )
-								{
-									nextUnification[k] = binding[k];
-								}
-
-								iterativeBindings.Add( nextUnification );
-							}
-						}
-					}
-				}
-
-				possibleBindings = iterativeBindings;
-			}
-
-			return possibleBindings.Where( bindings => bindings.Count() > 0 ).ToList();
 		}
 
 		#endregion

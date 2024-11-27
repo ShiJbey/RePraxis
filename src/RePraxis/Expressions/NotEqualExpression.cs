@@ -6,21 +6,18 @@ namespace RePraxis
 {
 	public class NotEqualExpression : IQueryExpression
 	{
-		string lhValue;
-		string rhValue;
+		Sentence lhValue;
+		Sentence rhValue;
 
 		public NotEqualExpression(string lhValue, string rhValue)
 		{
-			this.lhValue = lhValue;
-			this.rhValue = rhValue;
+			this.lhValue = new Sentence( lhValue );
+			this.rhValue = new Sentence( rhValue );
 		}
 
-		public QueryState Evaluate(RePraxisDatabase database, QueryState state)
+		public void Evaluate(QueryState state)
 		{
-			INode[] lhNodes = RePraxisHelpers.ParseSentence( lhValue );
-			INode[] rhNodes = RePraxisHelpers.ParseSentence( rhValue );
-
-			if ( lhNodes.Length > 1 )
+			if ( lhValue.Nodes.Length > 1 )
 			{
 				throw new Exception(
 					"Comparator expression may only be single variables, symbols, or constants. "
@@ -28,7 +25,7 @@ namespace RePraxis
 				);
 			}
 
-			if ( rhNodes.Length > 1 )
+			if ( rhValue.Nodes.Length > 1 )
 			{
 				throw new Exception(
 					"Comparator expression may only be single variables, symbols, or constants. "
@@ -40,34 +37,32 @@ namespace RePraxis
 			// then the query has failed.
 			if (
 				state.Bindings.Count() == 0
-				&& (RePraxisHelpers.HasVariables( lhValue ) || RePraxisHelpers.HasVariables( rhValue ))
+				&& (lhValue.HasVariables || rhValue.HasVariables)
 			)
 			{
-				return new QueryState( false );
+				state.Success = false;
+				return;
 			}
 
 			// Loop through through the bindings and find those where the bound values
 			// are not equivalent.
-			Dictionary<string, INode>[] validBindings = state.Bindings
+			List<Dictionary<string, INode>> validBindings = state.Bindings
 						.Where( (binding) =>
 						{
-							INode leftNode = RePraxisHelpers.ParseSentence(
-								RePraxisHelpers.BindSentence( lhValue, binding )
-							)[0];
+							INode leftNode = lhValue.BindVariables( binding ).Nodes[0];
 
-							INode rightNode = RePraxisHelpers.ParseSentence(
-								RePraxisHelpers.BindSentence( rhValue, binding )
-							)[0];
+							INode rightNode = rhValue.BindVariables( binding ).Nodes[0];
 
 							return leftNode.NotEqualTo( rightNode );
-						} ).ToArray();
+						} ).ToList();
 
-			if ( validBindings.Length == 0 )
+			if ( validBindings.Count == 0 )
 			{
-				return new QueryState( false );
+				state.Success = false;
+				return;
 			}
 
-			return new QueryState( true, validBindings );
+			state.Bindings = validBindings;
 		}
 	}
 }

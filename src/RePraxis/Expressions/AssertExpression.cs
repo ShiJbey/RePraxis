@@ -4,41 +4,51 @@ namespace RePraxis
 {
 	public class AssertExpression : IQueryExpression
 	{
-		string statement;
+		Sentence statement;
 
 		public AssertExpression(string statement)
 		{
-			this.statement = statement;
+			this.statement = new Sentence( statement );
 		}
 
-		public QueryState Evaluate(RePraxisDatabase database, QueryState state)
+		public void Evaluate(QueryState state)
 		{
 
-			if ( RePraxisHelpers.HasVariables( statement ) )
+			if ( statement.HasVariables )
 			{
-				var bindings = DBQuery.UnifyAll( database, state, new string[] { statement } );
+				var bindings = state.UnifyAll( new Sentence[] { statement } );
 
-				if ( bindings.Count() == 0 ) return new QueryState( false );
+				if ( bindings.Count() == 0 )
+				{
+					state.Success = false;
+					return;
+				}
 
 				var validBindings = bindings
 					.Where(
 						(binding) =>
 						{
-							return database.Assert(
-								RePraxisHelpers.BindSentence( statement, binding )
+							return state.DatabaseAssert(
+								statement.BindVariables( binding )
 							);
 						}
 					)
-					.ToArray();
+					.ToList();
 
-				if ( validBindings.Length == 0 ) return new QueryState( false );
+				if ( validBindings.Count == 0 )
+				{
+					state.Success = false;
+					return;
+				}
 
-				return new QueryState( true, validBindings );
+				state.Bindings = validBindings;
+				return;
 			}
 
-			if ( !database.Assert( statement ) ) return new QueryState( false );
-
-			return state;
+			if ( !state.DatabaseAssert( statement ) )
+			{
+				state.Success = false;
+			}
 		}
 	}
 }

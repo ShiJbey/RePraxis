@@ -1,6 +1,24 @@
-# Re:Praxis - In-memory database and query language for C\#
+# Re:Praxis: In-Memory Logic Database for Games
 
-Re:Praxis is an in-memory database solution for creating simple databases for games and applications. It is a reconstruction of Praxis, the exclusion logic-based language used by the [Versu social simulation engine](https://versu.com/). Users store information using strings called *sentences*, and the system parses these to create an internal database tree. Users can then query for patterns in the data using the same syntax used to store information.
+Re:Praxis is an in-memory logic database solution for creating simple databases for games and applications. It is a reconstruction of Praxis, the exclusion logic-based language used by the [Versu social simulation engine](https://versu.com/). Users store information using strings called *sentences*, and the system parses these to create an internal database tree. Users can then query for patterns in the data using the same syntax used to store information.
+
+## Table of Contents
+
+- [Re:Praxis: In-Memory Logic Database for Games](#repraxis-in-memory-logic-database-for-games)
+  - [Table of Contents](#table-of-contents)
+  - [Installation](#installation)
+  - [Creating a New Database](#creating-a-new-database)
+  - [Storing Information](#storing-information)
+  - [Deleting Information](#deleting-information)
+  - [Asserting Information](#asserting-information)
+  - [Querying the Database](#querying-the-database)
+    - [Query statement types](#query-statement-types)
+      - [Assertion statement](#assertion-statement)
+      - [Not-statement (negation)](#not-statement-negation)
+      - [Relational statements](#relational-statements)
+  - [Adding Access Listeners](#adding-access-listeners)
+  - [Building From Source](#building-from-source)
+  - [References](#references)
 
 ## Installation
 
@@ -9,7 +27,7 @@ Re:Praxis is an in-memory database solution for creating simple databases for ga
 3. Copy this directory into your project.
    - If you're using Unity, place this directory within a directory named `Plugins` within your `Assets` folder.
 
-## Creating a new database
+## Creating a New Database
 
 Creating a new database is the first thing you need to do. A `RePraxisDatabase` instance is responsible for managing all the data and providing data to query.
 
@@ -20,9 +38,9 @@ using RePraxis;
 RePraxisDatabase db = new RePraxisDatabase();
 ```
 
-## Adding information
+## Storing Information
 
-Adding information to the database is easy. There are no SQL-like tables or property-driven documents. Re:Praxis stores information using strings of text called sentences. Sentences are broken into nodes using the dot (`.`) and exclusion (`!`) operators (See the example code below).
+Storing information to the database is easy. There are no SQL-like tables or property-driven documents. Re:Praxis stores information using strings of text called sentences. Sentences are broken into nodes using the dot (`.`) and exclusion (`!`) operators (See the example code below).
 
 You can think of the internal structure of the database as a tree. Nodes followed by the dot operator can have more than one child, and those followed by the exclusion operator can only have a single child (See the example below).
 
@@ -40,7 +58,7 @@ db.Insert( "ashley.likes.mike" );
 
 This setup allows us to express and store various things like character stats and relationships. For more information about the syntax, please see [this presentation](https://versublog.files.wordpress.com/2014/05/praxis.pdf) by Richard Evans on the original Praxis language.
 
-## Deleting information
+## Deleting Information
 
 Conversely, we can remove information from the database using the same syntax. The code below removes this entry from the database and any other data entries prefixed with `"ashley.likes.mike"`.
 
@@ -48,7 +66,7 @@ Conversely, we can remove information from the database using the same syntax. T
 db.Delete( "ashley.likes.mike" );
 ```
 
-## Asserting information
+## Asserting Information
 
 Users can check if the database has a piece of data using the `RePraxisDatabase.Assert` method. `Assert` will return false if the data is not in the database, the values differ, or the cardinalities (`.` or `!`) don't match.
 
@@ -63,7 +81,7 @@ db.Assert( "ashley.likes" );
 // Returns true since there are entries with this as a prefix
 ```
 
-## Querying the database
+## Querying the Database
 
 Finally, the most powerful part of this database solution is the ability to query for patterns using variables. Queries have an extended syntax allowing variables, negations, and relational operations. The example below creates a database and fills it with information about relationships between some characters and a player. Then we create a new query that looks for valid bindings for the variables: `?speaker`, `?other`, `?r0`, and `?r1`.
 
@@ -248,7 +266,35 @@ var result = new DBQuery()
     .Run( db );
 ```
 
-## Building Re:Praxis from source
+## Adding Access Listeners
+
+You can add callback functions that run before a query or asset statement accesses a specific path in the database. For some applications, these are used to recalculate character stat data in realtime before querying it. The following is an example.
+
+```csharp
+class Player
+{
+    public int reputation;
+}
+
+var player = new Player() { reputation = 10 };
+
+var db = new RePraxisDatabase();
+
+// Whenever we query for the player's reputation, the given
+// callback function executes and updates the reputation value
+// in the database before it's accessed.
+db.AddBeforeAccessListener("player.reputation", (database) => {
+    database.Insert($"player.reputation!{player.reputation}");
+});
+
+db.Assert("player.reputation!10"); // True
+db.Assert("player.reputation!25"); // False
+player.reputation = 25; // Update the player instance only
+db.Assert("player.reputation!25"); // True
+
+```
+
+## Building From Source
 
 Building Re:Praxis from source requires that you have .Net net installed. Run the following commands, and new `RePraxis.dll` and `RePraxis.pdb` files will be generated within the `dist` directory.
 

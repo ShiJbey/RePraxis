@@ -340,4 +340,73 @@ public class Tests
 
 		Assert.That( queryResult.Success, Is.True );
 	}
+
+	/// <summary>
+	/// Oversimplified class that represents a character.
+	/// </summary>
+	private class TestCharacter
+	{
+		public int reputation;
+	}
+
+	/// <summary>
+	/// Ensure that OnBeforeAccessListeners are called when asserting information.
+	/// </summary>
+	[Test]
+	public void TestBeforeAccessDuringAssert()
+	{
+		TestCharacter player = new TestCharacter() { reputation = 10 };
+
+		RePraxisDatabase db = new RePraxisDatabase();
+
+		// Whenever we query for the player's reputation, the given
+		// callback function executes and updates the reputation value
+		// in the database before it's accessed.
+		db.AddBeforeAccessListener( "player.reputation", (database) =>
+		{
+			database.Insert( $"player.reputation!{player.reputation}" );
+		} );
+
+		Assert.True( db.Assert( "player.reputation!10" ) );
+		Assert.False( db.Assert( "player.reputation!25" ) );
+		player.reputation = 25; // Update the player instance only
+		Assert.True( db.Assert( "player.reputation!25" ) );
+	}
+
+	/// <summary>
+	/// Ensure that OnBeforeAccessListeners are called when querying the database.
+	/// </summary>
+	[Test]
+	public void TestBeforeAccessDuringQuery()
+	{
+		TestCharacter player = new TestCharacter() { reputation = 10 };
+
+		RePraxisDatabase db = new RePraxisDatabase();
+
+		// Whenever we query for the player's reputation, the given
+		// callback function executes and updates the reputation value
+		// in the database before it's accessed.
+		db.AddBeforeAccessListener( "player.reputation", (database) =>
+		{
+			database.Insert( $"player.reputation!{player.reputation}" );
+		} );
+
+		var query0 = new DBQuery().Where( "player.reputation!10" );
+		var query1 = new DBQuery()
+			.Where( "player.reputation!?x" )
+			.Where( "eq ?x 25" );
+
+		Assert.True( query0.Run( db ).Success );
+		Assert.False( query1.Run( db ).Success );
+
+		player.reputation = 25; // Update the player instance only
+
+		Assert.True( query1.Run( db ).Success );
+
+		db.RemoveAllBeforeAccessListeners( "player.reputation" );
+
+		player.reputation = 27;
+
+		Assert.True( query1.Run( db ).Success ); // Database shouldn't update
+	}
 }

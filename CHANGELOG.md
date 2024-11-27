@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 The format is based on <https://common-changelog.org/>, and this project adheres mostly to Semantic Versioning. However, all releases before 1.0.0 have breaking changes between minor-version updates.
 
+## [1.4.0] - 2024-11-27
+
+### Changed
+
+- Documentation updates
+- `IQueryExpression.Execute(...)` no longer returns a value and only takes a `QueryState` as the only parameter
+- All query expressions now operate on `Sentence` objects instead
+- Query state now responsible
+- Move/replace all helper functions in `RePraxisHelpers` to specific classes.
+
+### Added
+
+- `AddBeforeAccessListener()` method to registers listeners that are called whenever a path in the database is accessed in a query or assertion.
+- `RemoveBeforeAccessListener()` method to remove a registered before access listener
+- `RemoveAllBeforeAccessListeners()` method to remove all registered before access listeners
+- `Sentence` class to wrap `INode[]` when parsing strings. (replaces `CreateSentence(INode[] nodes)` from `RePraxisHelpers`)
+
 ## [1.3.0] - 2024-02-06
 
 ### Changed
@@ -56,3 +73,4 @@ _Initial release._
 [1.1.0]: https://github.com/ShiJbey/RePraxis/releases/tag/v1.1.0
 [1.2.0]: https://github.com/ShiJbey/RePraxis/releases/tag/v1.2.0
 [1.3.0]: https://github.com/ShiJbey/RePraxis/releases/tag/v1.3.0
+[1.4.0]: https://github.com/ShiJbey/RePraxis/releases/tag/v1.4.0

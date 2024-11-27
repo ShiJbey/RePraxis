@@ -6,51 +6,52 @@ namespace RePraxis
 {
 	public class NotExpression : IQueryExpression
 	{
-		string statement;
+		Sentence statement;
 
 		public NotExpression(string statement)
 		{
-			this.statement = statement;
+			this.statement = new Sentence( statement );
 		}
 
-		public QueryState Evaluate(RePraxisDatabase database, QueryState state)
+		public void Evaluate(QueryState state)
 		{
-			if ( RePraxisHelpers.HasVariables( statement ) )
+			if ( statement.HasVariables )
 			{
 				// If there are no existing bindings, then this is the first statement in the query
 				// or no previous statements contained variables.
 				if ( state.Bindings.Count() == 0 )
 				{
 					// We need to find bindings for all of the variables in this expression
-					var bindings = DBQuery.UnifyAll( database, state, new string[] { statement } );
+					var bindings = state.UnifyAll( new Sentence[] { statement } );
 
 					// If bindings for variables are found then we know this expression fails
 					// because we want to ensure that the statement is never true
-					if ( bindings.Count > 0 ) return new QueryState( false );
+					if ( bindings.Count > 0 )
+					{
+						state.Success = false;
+						return;
+					}
 
 					// Continue the query.
-					return state;
+					return;
 				}
 
 				// If we have existing bindings, we need to filter the existing bindings
-				var validBindings = state.Bindings
+				List<Dictionary<string, INode>> validBindings = state.Bindings
 					.Where(
 						(binding) =>
 						{
 							// Try to build a new sentence from the bindings and the expression's
 							// statement.
-							var sentence = RePraxisHelpers.BindSentence( statement, binding );
+							var sentence = statement.BindVariables( binding );
 
-							if ( RePraxisHelpers.HasVariables( sentence ) )
+							if ( sentence.HasVariables )
 							{
 								// Treat the new sentence like its first in the query
 								// and do a sub-unification, swapping out the state for an empty
 								// one without existing bindings
-								var scopedBindings = DBQuery.UnifyAll(
-									database,
-									new QueryState( true ),
-									new string[] { sentence }
-								);
+								var scopedBindings = new QueryState( state.Database, true )
+									.UnifyAll( new Sentence[] { sentence } );
 
 								// If any of the remaining variables are bound in the scoped
 								// bindings, then the entire binding fails
@@ -59,19 +60,26 @@ namespace RePraxis
 								return true;
 							}
 
-							return !database.Assert( sentence );
+							return !state.DatabaseAssert( sentence );
 						}
 					)
-					.ToArray();
+					.ToList();
 
-				if ( validBindings.Length == 0 ) return new QueryState( false );
+				if ( validBindings.Count == 0 )
+				{
+					state.Success = false;
+					return;
+				}
 
-				return new QueryState( true, validBindings );
+				state.Bindings = validBindings;
+				return;
 			}
 
-			if ( database.Assert( statement ) ) return new QueryState( false );
-
-			return state;
+			if ( state.DatabaseAssert( statement ) )
+			{
+				state.Success = false;
+				return;
+			}
 		}
 	}
 }
