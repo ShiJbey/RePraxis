@@ -35,6 +35,15 @@ namespace RePraxis
 					return new VariableNode( token, cardinality );
 				}
 
+				if ( token[0] == '"' )
+				{
+					if ( token[^1] != '"' )
+					{
+						throw new System.ArgumentException("A string node must start and end with a double quote.");
+					}
+					return new StringNode( token[1..^1], cardinality );
+				}
+
 				if ( int.TryParse( token, out var intValue ) )
 				{
 					return new IntNode( intValue, cardinality );

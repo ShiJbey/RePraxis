@@ -40,6 +40,23 @@ public class Tests
 		Assert.That( db.Assert( "A" ), Is.EqualTo( true ) );
 	}
 
+	[Test]
+	public void TestStringNodes()
+	{
+		var db = new RePraxisDatabase();
+
+		db.Insert( "establish_relationship.linus_bergstrom.jordan_fischer!friends!\"We get along really well\"" );
+
+		var query = new DBQuery()
+			.Where( "establish_relationship.linus_bergstrom.jordan_fischer!friends!?reason" );
+
+		var result = query.Run( db );
+
+		Assert.That( result.Success, Is.EqualTo( true ) );
+		Assert.That( result.Bindings.Length, Is.EqualTo( 1 ) );
+		Assert.That( result.Bindings[0]["?reason"], Is.EqualTo( "We get along really well" ) );
+	}
+
 	/// <summary>
 	/// Test that create, retrieval, updating, and deletion (CRUD)
 	/// </summary>
